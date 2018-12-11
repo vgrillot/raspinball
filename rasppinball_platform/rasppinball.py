@@ -127,6 +127,8 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
     def get_hw_switch_states(self):
         """Get initial hardware switch states."""
+        # TODO: ask ardnuiball to refresh sw states
+        # TODO: the fake kb management cause some clear sw...
         hw_states = dict()
         #k = self._kp.keypad()
         k = ""
