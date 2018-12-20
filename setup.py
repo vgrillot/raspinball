@@ -43,6 +43,6 @@ setup(
 
     entry_points='''
     [mpf.platforms]
-    rasppinball_platform=rasppinball_platform.rasppinball_platform:RasppinballHardwarePlatform
+    rasppinball_platform=rasppinball_platform.rasppinball:RasppinballHardwarePlatform
     '''
 )
