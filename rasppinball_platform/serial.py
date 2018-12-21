@@ -5,7 +5,6 @@ RaspPinball communication management
 # !!181104:VG:Creation (refactoring, splitter main unit)
 
 
-import logging
 import asyncio
 import time
 
@@ -42,6 +41,7 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         """peek and process the first message from the bufer"""
         # !!181119:VG:Remove the while, manage only the first message
         if self.received_msg:
+            m = None  # TMCH
             try:
                 pos = self.received_msg.find('\r')
                 if pos == -1:  # no full msg
@@ -54,14 +54,13 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
                 return True
             except Exception as e:
                 self.log.error("invalid parse frame, error='%s', msg='%s'" % (repr(e), m))
-                raise  #!!!:to see the full strack trace
+                raise  # !!!:to see the full strack trace
 
     @asyncio.coroutine
     def _identify_connection(self):
         """Initialise and identify connection."""
         pass  # nothing to identify for now...
         yield from self.start_read_loop()
-
 
     def __send_frame(self, frame_nb, msg):
         """send or resend and date it"""
@@ -81,7 +80,6 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         """add a new msg to frame pool"""
         self.frame_nb += 1
         self.frames[self.frame_nb] = {'msg': msg, 'time': time.time(), 'retry': 0}
-        #self.__send_frame(self.frame_nb, msg)
 
     def ack_frame(self, frame_nb, result):
         """an ack has been received, delete the according frame in buffer"""
@@ -102,7 +100,7 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         try:
             for k, f in self.frames.items():
                 if (f['retry'] == 0) or (time.time() - f['time'] > 1.000):
-                    #self.log.warning("resend frame %d:%s" % (k, f['msg']))
+                    # self.log.warning("resend frame %d:%s" % (k, f['msg']))
                     self.__send_frame(k, f['msg'])
                     return
         except RuntimeError:
@@ -122,11 +120,11 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         self.__send_msg(msg)
 
     def driver_enable(self, coil_pin):
-        msg = "DE:%s" % (coil_pin)
+        msg = "DE:%s" % coil_pin
         self.__send_msg(msg)
 
     def driver_disable(self, coil_pin):
-        msg = "DD:%s" % (coil_pin)
+        msg = "DD:%s" % coil_pin
         self.__send_msg(msg)
 
     def msg_init_platform(self):
