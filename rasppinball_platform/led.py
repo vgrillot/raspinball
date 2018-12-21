@@ -3,16 +3,18 @@ RaspPinball Les management
 """
 
 # !!181104:VG:Creation (refactoring, splitter main unit)
+# !!181221:VG:Move to V5 (LightPlatformInterface)
 
 
 import logging
-from mpf.platforms.interfaces.rgb_led_platform_interface import RGBLEDPlatformInterface
+from mpf.platforms.interfaces.light_platform_interface import LightPlatformInterface
 
 
-class RASPLed(RGBLEDPlatformInterface):
+class RASPLed(LightPlatformInterface):
 
     def __init__(self, config, number, strip):
         """Initialise led."""
+        super(RASPLed, self).__init__(number)
         self.number = number
         self.current_color = '000000'
         self.log = logging.getLogger('RASPLed')
