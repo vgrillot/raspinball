@@ -3,10 +3,11 @@ RaspPinball Driver management
 """
 
 # !!181104:VG:Creation (refactoring, splitter main unit)
+# !!181221:VG:Migrating to V5
 
 
 import logging
-from mpf.platforms.interfaces.driver_platform_interface import DriverPlatformInterface
+from mpf.platforms.interfaces.driver_platform_interface import DriverPlatformInterface, PulseSettings, HoldSettings
 
 
 class RASPDriver(DriverPlatformInterface):
@@ -18,23 +19,21 @@ class RASPDriver(DriverPlatformInterface):
         self.log = logging.getLogger('RASPDriver')
         self.log.info("Driver Settings for %s", self.number)
 
-    def disable(self, coil):
+    def disable(self):
         """Disable the driver."""
-        self.log.info("RASPDriver.Disable(%s %s)" % (coil.config['label'], coil.hw_driver.number))
-        self.platform.communicator.driver_disable(coil.hw_driver.number)
-        pass
+        self.log.info("RASPDriver.Disable(%s)" % self.number)
+        self.platform.communicator.driver_disable(self.number)
 
-    def enable(self, coil):
+    def enable(self, pulse_settings: PulseSettings, hold_settings: HoldSettings):
         """Enable this driver, which means it's held "on" indefinitely until it's explicitly disabled."""
-        self.log.info("RASPDriver.Enable(%s %s)" % (coil.config['label'], coil.hw_driver.number))
-        self.platform.communicator.driver_enable(coil.hw_driver.number)
-        pass
+        self.log.info("RASPDriver.Enable(%s)" % self.number)
+        self.platform.communicator.driver_enable(self.number)
 
     def get_board_name(self):
         """Return the name of the board of this driver."""
         pass
 
-    def pulse(self, coil, milliseconds):
+    def pulse(self, milliseconds):
         """Pulse a driver.
 
         Pulse this driver for a pre-determined amount of time, after which
@@ -53,7 +52,6 @@ class RASPDriver(DriverPlatformInterface):
             many drivers aren't activated at once.
 
         """
-        self.log.info("RASPDriver.Pulse(%s %s, %d ms)" %
-                       (coil.config['label'], coil.hw_driver.number, milliseconds))
-        self.platform.communicator.driver_pulse(coil.hw_driver.number, milliseconds)
+        self.log.info("RASPDriver.Pulse(%s, %d ms)" % (self.number, milliseconds))
+        self.platform.communicator.driver_pulse(self.number, milliseconds)
         return milliseconds
