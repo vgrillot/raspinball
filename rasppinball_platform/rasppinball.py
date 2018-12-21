@@ -10,6 +10,9 @@ from rasppinball_platform.keypad import Keypad
 # from mpf.devices.driver import ConfiguredHwDriver
 from mpf.core.platform import LightsPlatform, SwitchPlatform, DriverPlatform
 
+from mpf.core.platform import DriverConfig, SwitchConfig
+
+
 from rasppinball_platform.neopixel import *  # don't find it on raspberry
 # from neopixel import * # ok sur raspberry
 
@@ -104,7 +107,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
             self.old_key = s
 
-    def tick(self, dt):
+    def tick(self):
         """check with tick..."""
         #!!181124:VG:Poll message from communicator
 
@@ -146,27 +149,16 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             # use mpf default_pulse_ms
             return self.machine.config['mpf']['default_pulse_ms']
 
-    def configure_switch(self, config: dict):
-        """Configure a switch.
-
-        Args:
-            config: Config dict.
-        """
-        number = config['number']
+    def configure_switch(self, number: str, config: SwitchConfig, platform_config: dict) -> RASPSwitch:
+        """Configure a switch. """
         self.log.debug("configure_switch(%s)" % number)
         switch = RASPSwitch(config, number)
         self.switches[number] = switch
         return switch
 
-    def configure_driver(self, config: dict):
-        """Configure a driver.
-
-        Args:
-            config: Config dict.
-        """
-        #print(config)
-        number = config['number']
-        self.log.debug("configure_driver(%s)" % (number))
+    def configure_driver(self, config: DriverConfig, number: str, platform_settings: dict) -> RASPDriver:
+        """Configure a driver. """
+        self.log.debug("configure_driver(%s)" % number)
         driver = RASPDriver(config, number, self)
         self.drivers[number] = driver
         return driver
@@ -297,6 +289,8 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             try:
                 sw_id = params[0]
                 sw_state = int(params[1])
+                self.machine.switch_controller.process_switch_by_num(sw_id, state=sw_state, platform=self, logical=False)
+                self.strip.setPixelColorRGB(0, 0, 0, 0xff)  # blue
             except ValueError:
                 self.log.error("SWU:bad frame format (%s)" % msg)
             except IndexError:
@@ -305,8 +299,6 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             if not self.switches:
                 self.log.error("SWU:switches not configured")
                 return
-            self.machine.switch_controller.process_switch_by_num(sw_id, state=sw_state, platform=self, logical=False)
-            self.strip.setPixelColorRGB(0, 0, 0, 0xff)     # blue
 
         elif cmd == "DBG":      # debug message
             self.log.debug("RECV:%s" % msg)
