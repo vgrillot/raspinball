@@ -163,24 +163,28 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         self.drivers[number] = driver
         return driver
 
-    def configure_led(self, config, channels):
-        """Subclass this method in a platform module to configure an LED.
-
-        This method should return a reference to the LED's platform interface
-        object which will be called to access the hardware.
-
-        Args:
-            channels (int): Number of channels (typically 3 for RGB).
-            config (dict): Config of LED.
-
-        """
-        number = config['number']
+    def configure_light(self, number: str, subtype: str, platform_settings: dict) -> RASPLed:
+        """Subclass this method in a platform module to configure an LED. """
         self.log.debug("configure_led(%s)" % number)
         #strip = self.strips[0]
         strip = self.strip
-        led = RASPLed(config, number, strip)
+        led = RASPLed(number, strip)
         self.leds[number] = led
         return led
+
+    def parse_light_number_to_channels(self, number: str, subtype: str):
+        """Parse light number to a list of channels."""
+        pass
+
+    def light_sync(self):
+        """Update lights synchonously."""
+        if self.strip.updated:
+            self.strip.updated = False
+            self.strip.show()
+
+
+
+
 
     def clear_hw_rule(self, switch, coil):
         """Clear a hardware rule.

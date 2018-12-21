@@ -12,7 +12,7 @@ from mpf.platforms.interfaces.light_platform_interface import LightPlatformInter
 
 class RASPLed(LightPlatformInterface):
 
-    def __init__(self, config, number, strip):
+    def __init__(self, number, strip):
         """Initialise led."""
         super(RASPLed, self).__init__(number)
         self.number = number
