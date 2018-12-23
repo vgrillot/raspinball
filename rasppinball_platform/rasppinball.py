@@ -119,17 +119,17 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
     def update_kb(self):
         s = self._kp.getKeys()
         if s != self.old_key:
-            #print("Keys:%s" % s)
+            # print("Keys:%s" % s)
 
             #   disable sw
             for num, sw in self.switches.items():
                 if (num in self.old_key) and (not num in s):
-                    #print ("%s OFF" % num)
+                    # print ("%s OFF" % num)
                     self.machine.switch_controller.process_switch_by_num(sw.number, state=0, platform=self, logical=False)
 
             for num, sw in self.switches.items():
-                if (not num in self.old_key) and (num in s):
-                    #print ("%s ON" % num)
+                if (num not in self.old_key) and (num in s):
+                    # print ("%s ON" % num)
                     self.machine.switch_controller.process_switch_by_num(sw.number, state=1, platform=self, logical=False)
 
             self.old_key = s
@@ -160,16 +160,11 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
     @asyncio.coroutine
     def get_hw_switch_states(self):
         """Get initial hardware switch states."""
-        # TODO: ask ardnuiball to refresh sw states
+        # TODO: ask arduinball to refresh sw states (coroutine)
         # TODO: the fake kb management cause some clear sw...
         hw_states = dict()
-        #k = self._kp.keypad()
-        k = ""
         for number, sw in self.switches.items():
-            if number == k:
-                hw_states[number] = 1
-            else:
-                hw_states[number] = 0
+            hw_states[number] = sw.state
         return hw_states
 
     def _get_pulse_ms_value(self, coil):
@@ -329,9 +324,12 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
         elif cmd == "SWU":      # switch update
             try:
-                sw_id = params[0]
+                sw_number = params[0]
                 sw_state = int(params[1])
-                self.machine.switch_controller.process_switch_by_num(sw_id, state=sw_state, platform=self, logical=False)
+                sw = self.switches[sw_number]
+                sw.state = sw_state
+                self.machine.switch_controller.process_switch_obj(sw, sw.state, logical=False)
+                # self.machine.switch_controller.process_switch_by_num(sw_number, state=sw_state, platform=self, logical=False)
                 self.strip.setPixelColorRGB(0, 0, 0, 0xff)  # blue
             except ValueError:
                 self.log.error("SWU:bad frame format (%s)" % msg)
