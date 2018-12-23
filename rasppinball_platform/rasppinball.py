@@ -4,15 +4,14 @@ import sys
 sys.path.insert(0, '/home/sysop/pinball/led2/python/build/lib.linux-armv7l-3.4')
 
 import logging
-
-from rasppinball_platform.keypad import Keypad
+import asyncio
 
 # from mpf.devices.driver import ConfiguredHwDriver
-from mpf.core.platform import LightsPlatform, SwitchPlatform, DriverPlatform
+from mpf.core.platform import LightsPlatform
+from mpf.core.platform import SwitchPlatform, SwitchConfig, SwitchSettings
+from mpf.core.platform import DriverPlatform, DriverConfig, DriverSettings
 
-from mpf.core.platform import DriverConfig, SwitchConfig
-
-
+from rasppinball_platform.keypad import Keypad
 from rasppinball_platform.neopixel import *  # don't find it on raspberry
 # from neopixel import * # ok sur raspberry
 
@@ -34,43 +33,71 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         """Initialise raspPinball platform."""
         # super(HardwarePlatform, self).__init__(machine)
         super().__init__(machine)
-        self.debug = True
         self.log = logging.getLogger('RASPPINBALL')
         self.log.info("Configuring raspPinball hardware.")
-        self.strips = dict()
+        self.config = None # config not loaded yet
+        self.strip = None
         self.switches = dict()
         self.drivers = dict()
         self.leds = dict()
-        #self.serial_connections = dict()
         self.communicator = None
         self.init_done = False
+        self.features['has_lights'] = True
+        self.features['has_switches'] = True
+        self.features['has_drivers'] = True
+        self.features['tickless'] = False
+        # self.features['hardware_sounds'] = False
+
+        # fake keyboard:
+        #  keypad
+        self._kp = Keypad()
+        self.key = None
+        self.old_key = None
 
     def __repr__(self):
         """Return string representation."""
         return '<Platform.raspPinball>'
 
+
+    @classmethod
+    def get_config_spec(cls):
+        return "rasppinball", """
+    __valid_in__: machine
+    debug:       single|bool|False
+    serial_port: single|str|None
+    serial_baud: single|int|115200
+        """
+
+    @asyncio.coroutine
     def initialize(self):
         """Initialise connections to raspPinball hardware."""
         self.log.info("Initialize raspPinball hardware.")
 
-        self.config = self.machine.config['rasppinball_platform']
-        self.machine.config_validator.validate_config("rasppinball_platform", self.config)
+        # load config if setted
+        if 'rasppinball' in self.machine.config:
+            # raise AssertionError('Add `rasppinball:` to your machine config')
+            self.config = self.machine.config_validator.validate_config(
+                config_spec="rasppinball",
+                source=self.machine.config['rasppinball']
+            )
+
+        # self.config = self.machine.config['rasppinball']
+        # self.machine.config_validator.validate_config("rasppinball", self.config)
         #self.machine_type = (
         #    self.machine.config['hardware']['driverboards'].lower())
 
-        self._connect_to_hardware()
+        # self._connect_to_hardware()
 
-        #  keypad
-        self._kp = Keypad()
-        self.old_key = ""
-        self.key = ""
+
         #  leds
         self.init_strips()
         self.init_done = True
+        self.log.debug("Initialize done.")
 
     def stop(self):
         #!!170723:add msg halt platform
-        self.communicator.msg_halt_platform()
+        if self.communicator:
+            self.communicator.msg_halt_platform()
 
     def init_strips(self):
         """read strips config and init objects"""
@@ -151,14 +178,14 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
     def configure_switch(self, number: str, config: SwitchConfig, platform_config: dict) -> RASPSwitch:
         """Configure a switch. """
-        self.log.debug("configure_switch(%s)" % number)
+        # self.log.debug("configure_switch(%s)" % number)
         switch = RASPSwitch(config, number)
         self.switches[number] = switch
         return switch
 
     def configure_driver(self, config: DriverConfig, number: str, platform_settings: dict) -> RASPDriver:
         """Configure a driver. """
-        self.log.debug("configure_driver(%s)" % number)
+        # self.log.debug("configure_driver(%s)" % number)
         driver = RASPDriver(config, number, self)
         self.drivers[number] = driver
         return driver
@@ -174,7 +201,15 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
     def parse_light_number_to_channels(self, number: str, subtype: str):
         """Parse light number to a list of channels."""
-        pass
+        #  There is only one strip for now...
+        if subtype in ("led") or not subtype:
+            return [
+                {
+                    "number": str(number)
+                }
+            ]
+        else:
+            raise AssertionError("Unknown subtype {}".format(subtype))
 
     def light_sync(self):
         """Update lights synchonously."""
@@ -200,7 +235,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
                        (coil.hw_driver.number, switch.hw_switch.number))
         self.communicator.rule_clear(coil.hw_driver.number, switch.hw_switch.number)
 
-    def set_pulse_on_hit_rule(self, enable_switch, coil):
+    def set_pulse_on_hit_rule(self, enable_switch: SwitchSettings, coil: DriverSettings):
         """Set pulse on hit rule on driver.
 
         Pulses a driver when a switch is hit. When the switch is released the pulse continues. Typically used for
