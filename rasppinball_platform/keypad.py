@@ -35,9 +35,12 @@ class Keypad(object):
     COLUMN = [16, 13, 6, 12]
     
     def __init__(self):
-        GPIO.setmode(GPIO.BCM)
+        if GPIO:
+            GPIO.setmode(GPIO.BCM)
 
     def getKey(self):
+        if not GPIO:
+            return
         
         # Set all columns as output low
         for j in range(len(self.COLUMN)):
@@ -88,6 +91,9 @@ class Keypad(object):
 
     def getKeys(self):
         result = []
+        if not GPIO:
+            return result
+
 
         # Set all columns as output low
         for j in range(len(self.COLUMN)):
@@ -113,6 +119,8 @@ class Keypad(object):
         return result
 
     def exit(self):
+        if not GPIO:
+            return
         # Reinitialize all rows and columns as input at exit
         for i in range(len(self.ROW)):
                 GPIO.setup(self.ROW[i], GPIO.IN, pull_up_down=GPIO.PUD_UP) 
