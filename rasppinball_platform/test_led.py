@@ -4,10 +4,6 @@ import sys
 sys.path.insert(0, '/home/sysop/pinball/led2/python/build/lib.linux-armv7l-3.4')
 
 
-import logging
-import asyncio
-import time
-
 #try:
 #    from mpf.platforms.raspinball.neopixel import *  # don't find it on raspberry
 #except ImportError:

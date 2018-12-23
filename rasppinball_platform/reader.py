@@ -7,7 +7,6 @@
 
 import time
 import serial
-import sys
 import threading
 
 
@@ -49,5 +48,5 @@ try:
             ser.write(cmd.encode())
 finally:
     reader.stop = True
-reader.wait()
+# reader.wait()
 print("END.");

@@ -25,10 +25,10 @@ except ImportError:
 class Keypad(object):
     # CONSTANTS   
     KEYPAD = [
-    ['A', 'B', 'C', 'D'],
-    ['E', 'F', 'G', 'H'],
-    ['I', 'J', 'K', 'L'],
-    ['M', 'N', 'O', 'P']
+        ['A', 'B', 'C', 'D'],
+        ['E', 'F', 'G', 'H'],
+        ['I', 'J', 'K', 'L'],
+        ['M', 'N', 'O', 'P']
     ]
     
     ROW = [21, 20, 26, 19]
@@ -60,7 +60,7 @@ class Keypad(object):
                 rowVal = i
                 
         # if rowVal is not 0 thru 3 then no button was pressed and we can exit
-        if rowVal <0 or rowVal >3:
+        if rowVal < 0 or rowVal > 3:
             self.exit()
             return
         
@@ -78,10 +78,10 @@ class Keypad(object):
         for j in range(len(self.COLUMN)):
             tmpRead = GPIO.input(self.COLUMN[j])
             if tmpRead == 1:
-                colVal=j
+                colVal = j
                 
         # if colVal is not 0 thru 2 then no button was pressed and we can exit
-        if colVal <0 or colVal >3:
+        if colVal < 0 or colVal > 3:
             self.exit()
             return
 
@@ -93,7 +93,6 @@ class Keypad(object):
         result = []
         if not GPIO:
             return result
-
 
         # Set all columns as output low
         for j in range(len(self.COLUMN)):
@@ -135,7 +134,7 @@ if __name__ == '__main__':
     while True:
         # Loop while waiting for a keypress
         digit = None
-        while digit == None:
+        while digit is None:
             digit = kp.getKey()
         
         # Print the result
