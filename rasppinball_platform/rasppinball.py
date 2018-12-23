@@ -61,6 +61,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
     @classmethod
     def get_config_spec(cls):
+        #  NOTE : don't forget to clear the *.mpfcache files (tmp) or changes will not be reflected.
         return "rasppinball", """
     __valid_in__: machine
     debug:       single|bool|False
