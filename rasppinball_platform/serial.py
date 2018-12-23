@@ -135,6 +135,6 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         self.__send_msg(msg)
 
     def msg_halt_platform(self):
-        """message halt platform, call when the platform is goingn to quit"""
+        """message halt platform, call when the platform is going to quit"""
         msg = 'MH'
         self.__send_msg(msg)
