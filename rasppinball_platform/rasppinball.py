@@ -35,7 +35,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         super().__init__(machine)
         self.log = logging.getLogger('RASPPINBALL')
         self.log.info("Configuring raspPinball hardware.")
-        self.config = None # config not loaded yet
+        # self.config = None # config not loaded yet
         self.strip = None
         self.switches = dict()
         self.drivers = dict()
@@ -86,7 +86,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         #self.machine_type = (
         #    self.machine.config['hardware']['driverboards'].lower())
 
-        # self._connect_to_hardware()
+        self._connect_to_hardware()
 
 
         #  leds
@@ -161,7 +161,6 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
     def get_hw_switch_states(self):
         """Get initial hardware switch states."""
         # TODO: ask arduinball to refresh sw states (coroutine)
-        # TODO: the fake kb management cause some clear sw...
         hw_states = dict()
         for number, sw in self.switches.items():
             hw_states[number] = sw.state
