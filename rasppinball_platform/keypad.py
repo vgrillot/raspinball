@@ -16,7 +16,10 @@
 # https://github.com/bandono/matrixQPi?source=cc
 # #####################################################
 
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    GPIO = None
 
 
 class Keypad(object):
