@@ -22,3 +22,6 @@ class RASPSwitch(SwitchPlatformInterface):
         #                 "closed_nondebounced": [],
         #                 "open_debounced": [],
         #                 "open_nondebounced": []}
+
+    def get_board_name(self):
+        return "arduinBall"

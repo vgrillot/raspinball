@@ -4,9 +4,11 @@ RaspPinball Les management
 
 # !!181104:VG:Creation (refactoring, splitter main unit)
 # !!181221:VG:Move to V5 (LightPlatformInterface)
+# !!181223:VG:Implement LightPlatformDirectFade instead of LightPlatformInterface
 
 
 import logging
+from typing import Callable, Tuple
 from mpf.platforms.interfaces.light_platform_interface import LightPlatformInterface
 
 
@@ -19,6 +21,13 @@ class RASPLed(LightPlatformInterface):
         self.current_color = '000000'
         self.log = logging.getLogger('RASPLed')
         self.strip = strip
+
+    def set_fade(self, color_and_fade_callback: Callable[[int], Tuple[float, int]]):
+        pass
+        # TODO: change the current brightness of the pixel in the strip...
+
+    def get_board_name(self):
+        return "RaspPinball"
 
     def color(self, color):
         """Set the LED to the specified color.
