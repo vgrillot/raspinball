@@ -149,12 +149,15 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             self.strip.updated = False
             self.strip.show()
 
-        #  check if there is pending message to process
-        while self.communicator.peek_msg():
-            pass # unpack all message
-        #  resent frame not acked by Arduino
-        self.communicator.resent_frames()
+        # check communicator as it might not been initialized yet
+        if self.communicator:
+            #  check if there is pending message to process
+            while self.communicator.peek_msg():
+                pass # unpack all message
+            #  resent frame not acked by Arduino
+            self.communicator.resent_frames()
 
+    @asyncio.coroutine
     def get_hw_switch_states(self):
         """Get initial hardware switch states."""
         # TODO: ask ardnuiball to refresh sw states
