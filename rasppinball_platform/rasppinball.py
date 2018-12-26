@@ -76,7 +76,6 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
 
         # load config if setted
         if 'rasppinball' in self.machine.config:
-            # raise AssertionError('Add `rasppinball:` to your machine config')
             self.config = self.machine.config_validator.validate_config(
                 config_spec="rasppinball",
                 source=self.machine.config['rasppinball']
@@ -87,13 +86,19 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         #self.machine_type = (
         #    self.machine.config['hardware']['driverboards'].lower())
 
-        self._connect_to_hardware()
-
-
         #  leds
         self.init_strips()
         self.init_done = True
         self.log.debug("Initialize done.")
+
+        self.communicator = RaspSerialCommunicator(
+            platform=self,
+            port=self.config['serial_port'],    # 'COM6' or '/dev/ttyAMA0'
+            baud=self.config['serial_baud']     # 115200
+        )
+        yield from self.communicator.connect()
+        self.communicator.msg_init_platform()
+
 
     def stop(self):
         #!!170723:add msg halt platform
@@ -126,12 +131,14 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             for num, sw in self.switches.items():
                 if (num in self.old_key) and (not num in s):
                     # print ("%s OFF" % num)
-                    self.machine.switch_controller.process_switch_by_num(sw.number, state=0, platform=self, logical=False)
+                    self.machine.switch_controller.process_switch_by_num(sw.number, state=0, platform=self)
+                    # self.machine.switch_controller.process_switch_by_num(sw.number, state=0, platform=self, logical=False)
 
             for num, sw in self.switches.items():
                 if (num not in self.old_key) and (num in s):
                     # print ("%s ON" % num)
-                    self.machine.switch_controller.process_switch_by_num(sw.number, state=1, platform=self, logical=False)
+                    self.machine.switch_controller.process_switch_by_num(sw.number, state=1, platform=self)
+                    # self.machine.switch_controller.process_switch_by_num(sw.number, state=1, platform=self, logical=False)
 
             self.old_key = s
 
@@ -278,27 +285,6 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         self.communicator.rule_add(4, coil.hw_driver.number, enable_switch.hw_switch.number, disable_sw_id=disable_switch.hw_switch.number,
                                    duration=self._get_pulse_ms_value(coil))
 
-    def _connect_to_hardware(self):
-        """Connect to each port from the config.
-
-        This process will cause the connection threads to figure out which processor they've connected to
-        and to register themselves.
-        """
-        # !!!TEMP:need to validate config...
-        # if len(self.config['ports']) > 1:
-        #     self.log.fatal("only one slave com port is supported")
-        # if len(self.config['ports']) == 0:
-        #     self.log.warning("no communication port setted!")
-        #     return
-        # port = self.config['ports'][0]
-        # self.communicator = RaspSerialCommunicator(
-        #     platform=self, port=port,
-        #     baud=self.config['baud'])
-        self.communicator = RaspSerialCommunicator(
-            platform=self, port='COM6',
-            # platform=self, port='/dev/ttyAMA0',
-            baud=115200)
-        self.communicator.msg_init_platform()
 
     def process_received_message(self, msg: str):
         """dispatch an incoming message
@@ -328,9 +314,11 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
                 sw_state = int(params[1])
                 sw = self.switches[sw_number]
                 sw.state = sw_state
-                self.machine.switch_controller.process_switch_obj(sw, sw.state, logical=False)
-                # self.machine.switch_controller.process_switch_by_num(sw_number, state=sw_state, platform=self, logical=False)
+                # self.machine.switch_controller.process_switch_obj(sw, sw.state, logical=False)
+                self.machine.switch_controller.process_switch_by_num(sw_number, state=sw_state, platform=self)
                 self.strip.setPixelColorRGB(0, 0, 0, 0xff)  # blue
+            except KeyError:
+                self.log.error("SWU:switch not found (%s)" % sw_number)
             except ValueError:
                 self.log.error("SWU:bad frame format (%s)" % msg)
             except IndexError:

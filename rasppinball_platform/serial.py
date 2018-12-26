@@ -16,10 +16,10 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
 
     def __init__(self, platform, port, baud):
         """Initialise communicator. """
+        super().__init__(platform, port, baud)
         self.frame_nb = 0
         self.received_msg = ''
         self.frames = {}
-        super().__init__(platform, port, baud)
 
     def _parse_msg(self, msg):
         """Parse a message.
