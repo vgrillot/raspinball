@@ -17,7 +17,7 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
     def __init__(self, platform, port, baud):
         """Initialise communicator. """
         super().__init__(platform, port, baud)
-        self.frame_nb = 0
+        self.current_frame_nb = 0
         self.received_msg = ''
         self.frames = {}
 
@@ -54,7 +54,7 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
                 return True
             except Exception as e:
                 self.log.error("invalid parse frame, error='%s', msg='%s'" % (repr(e), m))
-                raise  # !!!:to see the full strack trace
+                raise  # !!!:to see the full stack trace
 
     @asyncio.coroutine
     def _identify_connection(self):
@@ -66,37 +66,59 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         """send or resend and date it"""
         if frame_nb not in self.frames:
             self.log.error('SEND:Frame %d "%s" not found in pool' % (frame_nb, msg.strip()))
-        retry = self.frames[frame_nb]['retry'] + 1
+        frame = self.frames[frame_nb]
+        retry = frame['retry'] + 1
         if retry > 10:
             self.log.error('SEND:too many retry (%d) for frame "%s"' % (retry, msg))
             self.frames.pop(frame_nb)
             return
-        self.frames[frame_nb] = {'msg': msg, 'time': time.time(), 'retry': retry}
-        s = "!%d:%s\n" % (self.frame_nb, msg)
+        frame['time'] = time.time()
+        frame['retry'] = retry
+        s = "!%d:%s\n" % (frame_nb, msg)
         self.log.info('SEND:%s' % s.strip())
         self.send(s.encode())
 
-    def __send_msg(self, msg):
+    def __post_msg(self, msg):
         """add a new msg to frame pool"""
-        self.frame_nb += 1
-        self.frames[self.frame_nb] = {'msg': msg, 'time': time.time(), 'retry': 0}
+        # !!181226:VG:Return the new frame_nb
+        self.current_frame_nb += 1
+        self.frames[self.current_frame_nb] = {
+            'msg': msg,
+            'time': time.time(),
+            'retry': 0,
+            'wait_for_ack': False,
+            'ack': None,
+        }
+        return self.current_frame_nb
+
+    @asyncio.coroutine
+    def wait_for_ack(self, frame_nb):
+        """wait until a specified frame has been ack"""
+        if frame_nb not in self.current_frame_nb:
+            raise RuntimeError("Frame %d not found" % frame_nb)
+        frame = self.frames[frame_nb]
+        frame['wait_for_ack'] = True  # to not pop the frame on ack reception
+
 
     def ack_frame(self, frame_nb, result):
         """an ack has been received, delete the according frame in buffer"""
         # !!170514:VG:Remove the frame only if ACK OK
         # !!181118:VG:Add log when frame acked
+        # !!181227:VG:Pop frame if we are not waiting for an ack
         if frame_nb in self.frames:
+            frame = self.frames[frame_nb]
+            frame['ack'] = result
             if not result:
-                self.log.error("ACK frame error %d : '%s'" % (frame_nb, self.frames[frame_nb]))
+                self.log.error("ACK frame error %d : '%s'" % (frame_nb, frame))
             else:
-                self.log.info("ACK frame done %d : '%s'" % (frame_nb, self.frames[frame_nb]))
-                self.frames.pop(frame_nb)
+                self.log.info("ACK frame done %d : '%s'" % (frame_nb, frame))
+                if not frame['wait_for_ack']:
+                    self.frames.pop(frame_nb)
 
     def resent_frames(self):
         """resent all frame not acked after a timeout of 100 ms
            resent only once at a time...
         """
-
         try:
             for k, f in self.frames.items():
                 if (f['retry'] == 0) or (time.time() - f['time'] > 1.000):
@@ -108,33 +130,33 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
 
     def rule_clear(self, coil_pin, enable_sw_id):
         msg = "RC:%s:%s" % (coil_pin, enable_sw_id)
-        self.__send_msg(msg)
+        self.__post_msg(msg)
 
     def rule_add(self, hwrule_type, coil_pin, enable_sw_id='0', disable_sw_id='0', duration=10):
         msg = "RA:%d:%s:%s:%s:%d" % (hwrule_type, coil_pin, enable_sw_id, disable_sw_id, duration)
-        self.__send_msg(msg)
+        self.__post_msg(msg)
 
     def driver_pulse(self, coil_pin, duration):
         # !!170418:VG:Add duration
         msg = "DP:%s:%d" % (coil_pin, duration)
-        self.__send_msg(msg)
+        self.__post_msg(msg)
 
     def driver_enable(self, coil_pin):
         msg = "DE:%s" % coil_pin
-        self.__send_msg(msg)
+        self.__post_msg(msg)
 
     def driver_disable(self, coil_pin):
         msg = "DD:%s" % coil_pin
-        self.__send_msg(msg)
+        self.__post_msg(msg)
 
     def msg_init_platform(self):
         """message init platform, call when the platform try to init the communication
            with the slave board
         """
         msg = 'MI'
-        self.__send_msg(msg)
+        self.__post_msg(msg)
 
     def msg_halt_platform(self):
         """message halt platform, call when the platform is going to quit"""
         msg = 'MH'
-        self.__send_msg(msg)
+        self.__post_msg(msg)
