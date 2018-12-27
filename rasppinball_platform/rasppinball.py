@@ -174,12 +174,12 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             hw_states[number] = sw.state
         return hw_states
 
-    def _get_pulse_ms_value(self, coil):
-        if coil.config['pulse_ms']:
-            return coil.config['pulse_ms']
-        else:
-            # use mpf default_pulse_ms
-            return self.machine.config['mpf']['default_pulse_ms']
+    # def _get_pulse_ms_value(self, coil):
+    #     if coil.hw_driver.config['default_pulse_ms']:
+    #         return coil.hw_driver.config['default_pulse_ms']
+    #     else:
+    #         # use mpf default_pulse_ms
+    #         return self.machine.config['mpf']['default_pulse_ms']
 
     def configure_switch(self, number: str, config: SwitchConfig, platform_config: dict) -> RASPSwitch:
         """Configure a switch. """
@@ -249,7 +249,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         self.log.info("set_pulse_on_hit_rule(coil=%s sw=%s)" %
                        (coil.hw_driver.number, enable_switch.hw_switch.number))
         self.communicator.rule_add(1, coil.hw_driver.number, enable_switch.hw_switch.number, 
-                                   duration=self._get_pulse_ms_value(coil))
+                                   duration=coil.hw_driver.config.default_pulse_ms)
 
     def set_pulse_on_hit_and_release_rule(self, enable_switch, coil):
         """Set pulse on hit and release rule to driver.
@@ -260,7 +260,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         self.log.info("set_pulse_on_hit_and_release_rule(coil=%s sw=%s)" %
                        (coil.hw_driver.number, enable_switch.hw_switch.number))
         self.communicator.rule_add(2, coil.hw_driver.number, enable_switch.hw_switch.number,
-                                   duration=self._get_pulse_ms_value(coil))
+                                   duration=coil.hw_driver.config.default_pulse_ms)
 
     def set_pulse_on_hit_and_enable_and_release_rule(self, enable_switch, coil):
         """Set pulse on hit and enable and relase rule on driver.
@@ -271,7 +271,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         self.log.info("set_pulse_on_hit_and_enable_and_release_rule(coil=%s sw=%s)" %
                        (coil.hw_driver.number, enable_switch.hw_switch.number))
         self.communicator.rule_add(3, coil.hw_driver.number, enable_switch.hw_switch.number,
-                                   duration=self._get_pulse_ms_value(coil))
+                                   duration=coil.hw_driver.config.default_pulse_ms)
 
     def set_pulse_on_hit_and_enable_and_release_and_disable_rule(self, enable_switch, disable_switch, coil):
         """Set pulse on hit and enable and release and disable rule on driver.
@@ -283,7 +283,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         self.log.info("set_pulse_on_hit_and_enable_and_release_and_disable_rule(coil=%s sw=%s dis_sw=%s)" %
                        (coil.hw_driver.number, enable_switch.hw_switch.number, disable_switch.hw_switch.number))
         self.communicator.rule_add(4, coil.hw_driver.number, enable_switch.hw_switch.number, disable_sw_id=disable_switch.hw_switch.number,
-                                   duration=self._get_pulse_ms_value(coil))
+                                   duration=coil.hw_driver.config.default_pulse_ms)
 
 
     def process_received_message(self, msg: str):
