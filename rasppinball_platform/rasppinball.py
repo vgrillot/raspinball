@@ -317,6 +317,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
                 # self.machine.switch_controller.process_switch_obj(sw, sw.state, logical=False)
                 self.machine.switch_controller.process_switch_by_num(sw_number, state=sw_state, platform=self)
                 self.strip.setPixelColorRGB(0, 0, 0, 0xff)  # blue
+                self.machine.set_machine_var("rasppinball_recv", msg)
             except KeyError:
                 self.log.error("SWU:switch not found (%s)" % sw_number)
             except ValueError:
@@ -334,15 +335,18 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
         elif cmd == "INF":      # information message
             self.log.info("RECV:%s" % msg)
             self.strip.setPixelColorRGB(0, 0, 0xff, 0xff)  # magenta
+            self.machine.set_machine_var("rasppinball_recv", msg)
 
         elif cmd == "WRN":  # warning message
             self.log.warning("RECV:%s" % msg)
             #self.strip.setPixelColorRGB(0, 0xc0, 0xff, 0)  # red light
             self.strip.setPixelColorRGB(0, 0xff, 0xff, 0)  # yellow
+            self.machine.set_machine_var("rasppinball_recv", msg)
 
         elif cmd == "ERR":  # error message
             self.log.error("RECV:%s" % msg)
             self.strip.setPixelColorRGB(0, 0, 0xff, 0)     # red
+            self.machine.set_machine_var("rasppinball_recv", msg)
 
         elif cmd == "TCK":  # arduino is alive !
             self.log.debug("TCK ok:%d" % int(params[0]))
@@ -352,6 +356,7 @@ class RasppinballHardwarePlatform(SwitchPlatform, DriverPlatform, LightsPlatform
             self.log.debug("ACK frame:%d  ok:%s" % (int(params[0]), params[1]))
             self.communicator.ack_frame(int(params[0]), params[1] == "OK")
             self.strip.setPixelColorRGB(0, 0xff, 0, 0)     # green
+            self.machine.set_machine_var("rasppinball_recv", msg)
 
         else:
             self.log.warning("RECV:UNKNOWN FRAME: [%s]" % msg)
