@@ -35,7 +35,9 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
             self.log.debug('PARSING:%s' % str(msg))
         except Exception as e:
             self.log.warning("invalid concat frame, error='%s', msg='%s'" % (repr(e), msg))
-        self.peek_msg()
+        #!!190104:VG:try to read all pending msg
+        while self.peek_msg():
+            pass
 
     def peek_msg(self):
         """peek and process the first message from the bufer"""
