@@ -32,7 +32,7 @@ class RaspSerialCommunicator(BaseSerialCommunicator):
         # !!181124:VG:Just append the buffer and peek the first msg
         try:
             self.received_msg += msg.decode()
-            self.log.info('PARSING:%s' % str(msg))
+            self.log.debug('PARSING:%s' % str(msg))
         except Exception as e:
             self.log.warning("invalid concat frame, error='%s', msg='%s'" % (repr(e), msg))
         self.peek_msg()
